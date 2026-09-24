@@ -1,7 +1,7 @@
 {
-  "name": "opencode-herdr",
+  "name": "opencode-herdr-control",
   "version": "0.1.0",
-  "description": "OpenCode plugin for herdr terminal multiplexer — auto-split panes for subagent visibility",
+  "description": "OpenCode plugin for herdr control — survey workspaces/tabs/panes, run shell commands, launch opencode agents",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",

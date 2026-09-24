@@ -1,6 +1,8 @@
-# opencode-herdr
+# opencode-herdr-control
 
-OpenCode plugin for [herdr](https://github.com/nicholasgasior/herdr) — auto-split panes for subagent visibility.
+OpenCode plugin for [herdr](https://github.com/nicholasgasior/herdr) control — survey workspaces/tabs/panes, run shell commands, launch opencode agents.
+
+Forked from `opencode-herdr` (auto-split panes for subagent visibility). This fork diverges: explicit `herdr_*` tools so agents can create workspaces, interact with shells, and launch OpenCode to work in them.
 
 When the OpenCode orchestrator delegates to a subagent (via the Task tool), this plugin automatically splits a new herdr pane and runs `opencode attach` inside it, giving you a live TUI view of each subagent's work. Panes close automatically when subagents complete.
 
@@ -12,19 +14,21 @@ When the OpenCode orchestrator delegates to a subagent (via the Task tool), this
 
 ## Installation
 
-Add `opencode-herdr` to your `opencode.json` plugin array:
+Add `opencode-herdr-control` to your `opencode.json` plugin array:
 
 ```json
 {
   "plugin": [
-    "opencode-herdr"
+    "opencode-herdr-control"
   ]
 }
 ```
 
+For local dev: `"plugin": ["file:/Users/duytrinh/Code/opencode-herdr"]`
+
 ## Configuration
 
-Create `~/.config/opencode/opencode-herdr.json` (or `$XDG_CONFIG_HOME/opencode/opencode-herdr.json`):
+Create `~/.config/opencode/opencode-herdr-control.json` (legacy `opencode-herdr.json` still works):
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|

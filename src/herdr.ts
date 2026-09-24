@@ -124,7 +124,7 @@ export function resolveServerUrl(): string | null {
   // Step 3: No URL available
   _resolvedServerUrl = null;
   console.warn(
-    "opencode-herdr: Could not resolve OpenCode server URL. Splits will be disabled. Start OpenCode with --port flag."
+    "opencode-herdr-control: Could not resolve OpenCode server URL. Splits will be disabled. Start OpenCode with --port flag."
   );
   return null;
 }

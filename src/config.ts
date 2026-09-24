@@ -16,46 +16,55 @@ const defaults: PluginConfig = {
 
 const VALID_DIRECTIONS = new Set<string>(["right", "down"])
 
+const PLUGIN_NAME = "opencode-herdr-control"
+const LEGACY_NAME = "opencode-herdr"
+
+function parseConfig(raw: string): PluginConfig | null {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    console.warn(`${PLUGIN_NAME}: Invalid config file, using defaults`)
+    return { ...defaults }
+  }
+
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    console.warn(`${PLUGIN_NAME}: Invalid config file, using defaults`)
+    return { ...defaults }
+  }
+
+  const obj = parsed as Record<string, unknown>
+  const config: PluginConfig = { ...defaults }
+
+  if ("splits" in obj && typeof obj.splits === "boolean") {
+    config.splits = obj.splits
+  }
+
+  if ("autoClose" in obj && typeof obj.autoClose === "boolean") {
+    config.autoClose = obj.autoClose
+  }
+
+  if ("direction" in obj && typeof obj.direction === "string" && VALID_DIRECTIONS.has(obj.direction)) {
+    config.direction = obj.direction as "right" | "down"
+  }
+
+  return config
+}
+
 export function loadConfig(): PluginConfig {
   const configDir = process.env.XDG_CONFIG_HOME
     ? join(process.env.XDG_CONFIG_HOME, "opencode")
     : join(homedir(), ".config", "opencode")
 
-  const configPath = join(configDir, "opencode-herdr.json")
-
-  try {
-    const raw = readFileSync(configPath, "utf-8")
-
-    let parsed: unknown
+  for (const name of [`${PLUGIN_NAME}.json`, `${LEGACY_NAME}.json`]) {
     try {
-      parsed = JSON.parse(raw)
+      const raw = readFileSync(join(configDir, name), "utf-8")
+      const config = parseConfig(raw)
+      if (config) return config
     } catch {
-      console.warn("opencode-herdr: Invalid config file, using defaults")
-      return { ...defaults }
+      // try next path
     }
-
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-      console.warn("opencode-herdr: Invalid config file, using defaults")
-      return { ...defaults }
-    }
-
-    const obj = parsed as Record<string, unknown>
-    const config: PluginConfig = { ...defaults }
-
-    if ("splits" in obj && typeof obj.splits === "boolean") {
-      config.splits = obj.splits
-    }
-
-    if ("autoClose" in obj && typeof obj.autoClose === "boolean") {
-      config.autoClose = obj.autoClose
-    }
-
-    if ("direction" in obj && typeof obj.direction === "string" && VALID_DIRECTIONS.has(obj.direction)) {
-      config.direction = obj.direction as "right" | "down"
-    }
-
-    return config
-  } catch {
-    return { ...defaults }
   }
+
+  return { ...defaults }
 }
