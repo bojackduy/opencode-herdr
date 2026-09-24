@@ -14,12 +14,12 @@ When the OpenCode orchestrator delegates to a subagent (via the Task tool), this
 
 ## Installation
 
-Add `opencode-herdr-control` to your `opencode.json` plugin array:
+Add `@bojackduy/opencode-herdr-control` to your `opencode.json` plugin array:
 
 ```json
 {
   "plugin": [
-    "opencode-herdr-control"
+    "@bojackduy/opencode-herdr-control"
   ]
 }
 ```

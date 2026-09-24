@@ -1,21 +1,44 @@
 {
-  "name": "opencode-herdr-control",
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@bojackduy/opencode-herdr-control",
   "version": "0.1.0",
   "description": "OpenCode plugin for herdr control — survey workspaces/tabs/panes, run shell commands, launch opencode agents",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
+    "typecheck": "tsc --noEmit --skipLibCheck",
     "build": "tsup",
-    "prepublishOnly": "bun run build"
+    "prepack": "bun run typecheck && bun run build",
+    "release:patch": "bun run typecheck && bun run build && npm version patch -m \"chore: release %s\" && git push personal main && git push personal $(git describe --tags --abbrev=0)",
+    "release:minor": "bun run typecheck && bun run build && npm version minor -m \"chore: release %s\" && git push personal main && git push personal $(git describe --tags --abbrev=0)",
+    "release:major": "bun run typecheck && bun run build && npm version major -m \"chore: release %s\" && git push personal main && git push personal $(git describe --tags --abbrev=0)"
+  },
+  "private": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bojackduy/opencode-herdr-control.git"
+  },
+  "homepage": "https://github.com/bojackduy/opencode-herdr-control#readme",
+  "bugs": {
+    "url": "https://github.com/bojackduy/opencode-herdr-control/issues"
+  },
+  "keywords": ["opencode", "opencode-plugin", "herdr", "terminal", "multiplexer", "control", "shell", "agent"],
+  "files": ["dist", "README.md", "LICENSE", "CHANGELOG.md"],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "engines": {
+    "bun": ">=1.3.0"
   },
   "peerDependencies": {
     "@opencode-ai/plugin": ">=1.0.0"
   },
   "devDependencies": {
+    "@types/node": "^26.6.2",
     "tsup": "^8.0.0",
     "typescript": "^5.5.0"
-  },
-  "keywords": ["opencode", "herdr", "plugin", "terminal", "multiplexer"],
-  "license": "MIT"
+  }
 }
