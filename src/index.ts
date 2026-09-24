@@ -1,11 +1,15 @@
 import type { Plugin } from "@opencode-ai/plugin"
 import { isInHerdr, getCurrentPaneId, splitPane, runInPane, closePane, resolveServerUrl } from "./herdr"
 import { loadConfig } from "./config"
+import { createHerdrTools } from "./tools"
 
 const plugin: Plugin = async ({ client, $ }) => {
-  // Early exit if not in herdr
+  const herdrTools = createHerdrTools()
+
+  // Early exit if not in herdr — still expose tools (they fail with clear error outside herdr)
   if (!isInHerdr()) {
     return {
+      tool: herdrTools,
       async event() {
         // Complete no-op outside herdr
       },
@@ -92,6 +96,7 @@ const plugin: Plugin = async ({ client, $ }) => {
   }
 
   return {
+    tool: herdrTools,
     async event({ event }) {
       const e = event as any
 
