@@ -15,7 +15,7 @@
     "release:major": "bun run typecheck && bun run build && npm version major -m \"chore: release %s\" && git push personal main && git push personal $(git describe --tags --abbrev=0)"
   },
   "private": false,
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bojackduy/opencode-herdr-control.git"

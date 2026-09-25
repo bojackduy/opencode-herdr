@@ -88,4 +88,4 @@ The plugin uses a row-based tiling pattern to create a readable grid instead of 
 
 ## License
 
-MIT
+AGPL-3.0-or-later. Fork of [opencode-herdr](https://github.com/gustavocaiano/opencode-herdr) by Gustavo Caiano (MIT) — original notice preserved in LICENSE.
