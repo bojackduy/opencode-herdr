@@ -33,6 +33,42 @@ function ensureInHerdr(): void {
   }
 }
 
+// --- Dedup for create ops: herdr creation is NOT idempotent server-side,
+// so a retried or double-fired tool call would create duplicate
+// workspaces/tabs. Share in-flight creates and reuse results for
+// identical label+cwd within a short TTL.
+const CREATE_DEDUP_TTL_MS = 90_000
+const recentCreates = new Map<string, { at: number; result: string }>()
+const inflightCreates = new Map<string, Promise<string>>()
+
+async function dedupedCreate(key: string, fn: () => Promise<string>): Promise<string> {
+  const now = Date.now()
+  const cached = recentCreates.get(key)
+  if (cached && now - cached.at < CREATE_DEDUP_TTL_MS) {
+    return `${cached.result}\n\nNOTE: reused the workspace/tab created ${Math.round((now - cached.at) / 1000)}s ago for identical label+cwd — server-side creation is not idempotent, so this duplicate call was NOT executed again.`
+  }
+  const inflight = inflightCreates.get(key)
+  if (inflight) return await inflight
+  if (recentCreates.size > 200) {
+    for (const [k, v] of recentCreates) {
+      if (now - v.at >= CREATE_DEDUP_TTL_MS) recentCreates.delete(k)
+    }
+  }
+  const p = fn().then(
+    (r) => {
+      recentCreates.set(key, { at: Date.now(), result: r })
+      inflightCreates.delete(key)
+      return r
+    },
+    (e) => {
+      inflightCreates.delete(key)
+      throw e
+    },
+  )
+  inflightCreates.set(key, p)
+  return await p
+}
+
 export function createHerdrTools() {
   return {
     herdr_status: tool({
@@ -124,7 +160,7 @@ export function createHerdrTools() {
     }),
 
     herdr_tab_create: tool({
-      description: "Create a new herdr tab (window) in current or specified workspace. Returns JSON with .result.tab.tab_id and .result.root_pane.",
+      description: "Create a new herdr tab (window) in current or specified workspace. Returns JSON with .result.tab.tab_id and .result.root_pane. Creation can take several seconds — wait for the result. Do NOT call again with the same args; identical calls within 90s reuse the previous result.",
       args: {
         cwd: tool.schema.string().optional().describe("Working directory. Defaults to session directory."),
         workspaceId: tool.schema.string().optional().describe("Workspace ID. Omit for current workspace."),
@@ -132,28 +168,37 @@ export function createHerdrTools() {
       },
       async execute(args, ctx) {
         ensureInHerdr()
-        const extra: string[] = []
-        if (args.workspaceId ?? process.env.HERDR_WORKSPACE_ID) extra.push("--workspace", (args.workspaceId ?? process.env.HERDR_WORKSPACE_ID)!)
-        if (args.cwd ?? ctx.directory) extra.push("--cwd", (args.cwd ?? ctx.directory)!)
-        if (args.label) extra.push("--label", args.label)
-        extra.push("--no-focus")
-        return await execHerdr(["tab", "create", ...extra])
+        const cwd = args.cwd ?? ctx.directory ?? process.cwd()
+        const ws = args.workspaceId ?? process.env.HERDR_WORKSPACE_ID ?? ""
+        const key = `tab|${ws}|${args.label ?? ""}|${cwd}`
+        return await dedupedCreate(key, async () => {
+          const extra: string[] = []
+          if (ws) extra.push("--workspace", ws)
+          if (cwd) extra.push("--cwd", cwd)
+          if (args.label) extra.push("--label", args.label)
+          extra.push("--no-focus")
+          return await execHerdrLong(["tab", "create", ...extra])
+        })
       },
     }),
 
     herdr_workspace_create: tool({
-      description: "Create a new herdr workspace (worksheet/project group). Returns JSON with .result.workspace, .result.tab, .result.root_pane.",
+      description: "Create a new herdr workspace (worksheet/project group). Returns JSON with .result.workspace, .result.tab, .result.root_pane. Creation can take several seconds — wait for the result. Do NOT call again with the same args; identical calls within 90s reuse the previous result. If unsure whether it succeeded, call herdr_status first instead of retrying.",
       args: {
         cwd: tool.schema.string().optional().describe("Working directory. Defaults to session directory."),
         label: tool.schema.string().optional().describe("Workspace label"),
       },
       async execute(args, ctx) {
         ensureInHerdr()
-        const extra: string[] = []
-        if (args.cwd ?? ctx.directory) extra.push("--cwd", (args.cwd ?? ctx.directory)!)
-        if (args.label) extra.push("--label", args.label)
-        extra.push("--no-focus")
-        return await execHerdr(["workspace", "create", ...extra])
+        const cwd = args.cwd ?? ctx.directory ?? process.cwd()
+        const key = `workspace|${args.label ?? ""}|${cwd}`
+        return await dedupedCreate(key, async () => {
+          const extra: string[] = []
+          if (cwd) extra.push("--cwd", cwd)
+          if (args.label) extra.push("--label", args.label)
+          extra.push("--no-focus")
+          return await execHerdrLong(["workspace", "create", ...extra])
+        })
       },
     }),
 
